@@ -35,7 +35,7 @@ class ArticleAdapter(
         holder.textView.text = article.url
     }
 
-    fun onItemClick(pos: Int) {
+    private fun onItemClick(pos: Int) {
         onItemClick(articles[pos])
     }
 

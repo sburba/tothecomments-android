@@ -34,7 +34,7 @@ class CommentPageAdapter(
         holder.textView.text = commentPage.title
     }
 
-    fun onItemClick(pos: Int) {
+    private fun onItemClick(pos: Int) {
         onItemClick(commentPages[pos])
     }
 
