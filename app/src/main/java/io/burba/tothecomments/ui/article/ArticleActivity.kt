@@ -8,7 +8,6 @@ import android.support.customtabs.CustomTabsIntent
 import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.util.Patterns
 import android.widget.Toast
 import io.burba.tothecomments.R
@@ -20,7 +19,7 @@ import io.burba.tothecomments.ui.ui
 import io.reactivex.Flowable
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_article.*
-import kotterknife.bindView
+import kotlinx.android.synthetic.main.content_article.*
 
 fun Activity.showComments(articleId: Long) {
     val intent = Intent(this, ArticleActivity::class.java)
@@ -38,7 +37,6 @@ class ArticleActivity : AppCompatActivity() {
     private val db by lazy { Db.getInstance(this) }
 
     private val disposables = CompositeDisposable()
-    private val commentPageList: RecyclerView by bindView(R.id.article_comment_page_list)
     private lateinit var adapter: CommentPageAdapter
     private lateinit var layoutManager: LinearLayoutManager
 
@@ -53,9 +51,9 @@ class ArticleActivity : AppCompatActivity() {
         adapter = CommentPageAdapter(this::launchCommentPage)
         layoutManager = LinearLayoutManager(this)
 
-        commentPageList.setHasFixedSize(true)
-        commentPageList.layoutManager = layoutManager
-        commentPageList.adapter = adapter
+        comment_page_list.setHasFixedSize(true)
+        comment_page_list.layoutManager = layoutManager
+        comment_page_list.adapter = adapter
     }
 
     override fun onStart() {
