@@ -14,7 +14,6 @@ internal data class Link(
 )
 
 internal interface RedditHttpService {
-    // This is a stupid hack
     @GET("search.json?sort=comments&limit=5")
     fun search(@Query("q") query: String): Single<SearchResponse>
 }
