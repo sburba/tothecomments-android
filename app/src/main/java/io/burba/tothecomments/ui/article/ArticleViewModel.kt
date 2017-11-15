@@ -66,7 +66,7 @@ class ArticleViewModel(app: Application) : AndroidViewModel(app) {
         }.flatMap { article ->
             Flowables.zip(Flowable.just(article), loadComments(article).toFlowable(), ::ArticleWithComments)
         }.map {
-            Loaded(it.article, it.comments)
+            if (it.comments.isEmpty()) NoCommentsFoundError(it.article) else Loaded(it.article, it.comments)
         }
     }
 

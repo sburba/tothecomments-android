@@ -93,6 +93,13 @@ class ArticleActivity : AppCompatActivity() {
                 adapter.commentPages = state.commentPages
                 comment_list_view_switcher.show(comment_list_comments)
             }
+            is NoCommentsFoundError -> {
+                adapter.clear()
+                toolbar_layout.title = state.article.url
+                refresh_container.isRefreshing = false
+                comment_list_error_message.text = getString(R.string.no_comments_found)
+                comment_list_view_switcher.show(comment_list_error_message)
+            }
             is InvalidUrlError -> {
                 adapter.clear()
                 toolbar_layout.title = getString(R.string.ya_goof)
