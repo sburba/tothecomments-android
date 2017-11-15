@@ -7,6 +7,7 @@ import io.burba.tothecomments.io.database.Db
 import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.io.database.models.CommentPage
 import io.burba.tothecomments.io.network.loadComments
+import io.burba.tothecomments.ui.ui
 import io.reactivex.Flowable
 import io.reactivex.disposables.Disposable
 import io.reactivex.flowables.ConnectableFlowable
@@ -31,7 +32,7 @@ class ArticleViewModel(app: Application) : AndroidViewModel(app) {
             else -> { // There's no article or url
                 Flowable.just(UnknownError)
             }
-        }.replay(1)
+        }.ui().replay(1)
 
         disposable = state.connect()
         stateStream = state
