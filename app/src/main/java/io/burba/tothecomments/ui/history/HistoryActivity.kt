@@ -4,8 +4,8 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import io.burba.tothecomments.R
-import io.burba.tothecomments.database.Db
-import io.burba.tothecomments.database.models.Article
+import io.burba.tothecomments.io.database.Db
+import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.ui.article.showComments
 import io.burba.tothecomments.ui.ui
 import io.reactivex.Single

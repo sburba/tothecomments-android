@@ -1,4 +1,4 @@
-package io.burba.tothecomments.network.hackernews
+package io.burba.tothecomments.io.network.hackernews
 
 data class HnCommentPage(
         val title: String,

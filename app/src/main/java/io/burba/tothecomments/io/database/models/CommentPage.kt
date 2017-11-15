@@ -1,4 +1,4 @@
-package io.burba.tothecomments.database.models
+package io.burba.tothecomments.io.database.models
 
 import android.arch.persistence.room.*
 

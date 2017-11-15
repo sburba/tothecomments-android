@@ -1,7 +1,7 @@
 package io.burba.tothecomments.ui.article
 
-import io.burba.tothecomments.database.models.Article
-import io.burba.tothecomments.database.models.CommentPage
+import io.burba.tothecomments.io.database.models.Article
+import io.burba.tothecomments.io.database.models.CommentPage
 
 sealed class ArticleActivityState
 

@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import io.burba.tothecomments.database.models.Article
+import io.burba.tothecomments.io.database.models.Article
 
 class ArticleAdapter(
         articles: List<Article> = arrayListOf(),

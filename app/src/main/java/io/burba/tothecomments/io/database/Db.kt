@@ -1,13 +1,13 @@
-package io.burba.tothecomments.database
+package io.burba.tothecomments.io.database
 
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.Room.databaseBuilder
 import android.arch.persistence.room.RoomDatabase
 import android.arch.persistence.room.TypeConverters
 import android.content.Context
-import io.burba.tothecomments.database.models.Article
-import io.burba.tothecomments.database.models.CommentPage
-import io.burba.tothecomments.database.util.Converters
+import io.burba.tothecomments.io.database.models.Article
+import io.burba.tothecomments.io.database.models.CommentPage
+import io.burba.tothecomments.io.database.util.Converters
 import io.burba.tothecomments.util.SingletonHolder
 
 @Database(entities = arrayOf(Article::class, CommentPage::class), version = 1)

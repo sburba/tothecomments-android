@@ -1,4 +1,4 @@
-package io.burba.tothecomments.network.reddit
+package io.burba.tothecomments.io.network.reddit
 
 import io.reactivex.Single
 import retrofit2.Retrofit

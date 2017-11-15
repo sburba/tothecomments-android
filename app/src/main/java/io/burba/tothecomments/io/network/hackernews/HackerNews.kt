@@ -1,4 +1,4 @@
-package io.burba.tothecomments.network.hackernews
+package io.burba.tothecomments.io.network.hackernews
 
 import io.reactivex.Single
 import retrofit2.Retrofit

@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import io.burba.tothecomments.database.models.CommentPage
+import io.burba.tothecomments.io.database.models.CommentPage
 
 class CommentPageAdapter(
         private val onItemClick: (CommentPage) -> Unit = {}

@@ -1,10 +1,10 @@
 package io.burba.tothecomments.ui.article
 
 import android.util.Patterns
-import io.burba.tothecomments.database.Db
-import io.burba.tothecomments.database.models.Article
-import io.burba.tothecomments.database.models.CommentPage
-import io.burba.tothecomments.network.loadComments
+import io.burba.tothecomments.io.database.Db
+import io.burba.tothecomments.io.database.models.Article
+import io.burba.tothecomments.io.database.models.CommentPage
+import io.burba.tothecomments.io.network.loadComments
 import io.reactivex.Flowable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Flowables

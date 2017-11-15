@@ -8,7 +8,7 @@ import android.support.customtabs.CustomTabsIntent
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import io.burba.tothecomments.R
-import io.burba.tothecomments.database.models.CommentPage
+import io.burba.tothecomments.io.database.models.CommentPage
 import io.burba.tothecomments.ui.show
 import kotlinx.android.synthetic.main.activity_article.*
 import kotlinx.android.synthetic.main.content_article.*

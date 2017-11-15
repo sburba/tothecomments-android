@@ -1,7 +1,7 @@
-package io.burba.tothecomments.database.util
+package io.burba.tothecomments.io.database.util
 
 import android.arch.persistence.room.TypeConverter
-import io.burba.tothecomments.database.models.CommentPage
+import io.burba.tothecomments.io.database.models.CommentPage
 import org.threeten.bp.Instant
 
 class Converters {

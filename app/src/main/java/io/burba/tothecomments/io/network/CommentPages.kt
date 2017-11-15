@@ -1,9 +1,9 @@
-package io.burba.tothecomments.network
+package io.burba.tothecomments.io.network
 
-import io.burba.tothecomments.database.models.Article
-import io.burba.tothecomments.database.models.CommentPage
-import io.burba.tothecomments.network.hackernews.HackerNews
-import io.burba.tothecomments.network.reddit.Reddit
+import io.burba.tothecomments.io.database.models.Article
+import io.burba.tothecomments.io.database.models.CommentPage
+import io.burba.tothecomments.io.network.hackernews.HackerNews
+import io.burba.tothecomments.io.network.reddit.Reddit
 import io.reactivex.Single
 import io.reactivex.rxkotlin.Singles
 
