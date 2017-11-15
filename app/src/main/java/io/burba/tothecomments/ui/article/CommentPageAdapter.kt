@@ -19,6 +19,10 @@ class CommentPageAdapter(
             diff.dispatchUpdatesTo(this)
         }
 
+    fun clear() {
+        commentPages = arrayListOf()
+    }
+
     override fun getItemCount() = commentPages.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

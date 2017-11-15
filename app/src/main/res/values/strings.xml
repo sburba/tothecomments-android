@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">To The Comments!</string>
+    <string name="an_error_has_occurred">An error has occurred</string>
+    <string name="load_comments_failed">Unable to load comments</string>
+    <string name="invalid_url">%1$s isn\'t a valid url, as far as I can tell</string>
+    <string name="ya_goof">Ya Goof</string>
+    <string name="error">Error</string>
 </resources>

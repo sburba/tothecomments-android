@@ -5,19 +5,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.support.customtabs.CustomTabsIntent
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Patterns
-import android.widget.Toast
 import io.burba.tothecomments.R
-import io.burba.tothecomments.database.Db
-import io.burba.tothecomments.database.models.Article
 import io.burba.tothecomments.database.models.CommentPage
-import io.burba.tothecomments.network.loadComments
-import io.burba.tothecomments.ui.ui
-import io.reactivex.Flowable
-import io.reactivex.disposables.CompositeDisposable
+import io.burba.tothecomments.ui.show
 import kotlinx.android.synthetic.main.activity_article.*
 import kotlinx.android.synthetic.main.content_article.*
 
@@ -34,11 +26,45 @@ fun Activity.showComments(url: String) {
 }
 
 class ArticleActivity : AppCompatActivity() {
-    private val db by lazy { Db.getInstance(this) }
 
-    private val disposables = CompositeDisposable()
+    private val presenter = ArticlePresenter(this)
     private lateinit var adapter: CommentPageAdapter
     private lateinit var layoutManager: LinearLayoutManager
+
+    fun setState(state: ArticleActivityState) {
+        when (state) {
+            is Loading -> {
+                toolbar_layout.title = state.url
+                refresh_container.isRefreshing = true
+                comment_list_view_switcher.show(comment_list_comments)
+            }
+            is LoadingWithArticle -> {
+                toolbar_layout.title = state.article.url
+                refresh_container.isRefreshing = true
+                comment_list_view_switcher.show(comment_list_comments)
+            }
+            is Loaded -> {
+                toolbar_layout.title = state.article.url
+                refresh_container.isRefreshing = false
+                adapter.commentPages = state.commentPages
+                comment_list_view_switcher.show(comment_list_comments)
+            }
+            is InvalidUrlError -> {
+                adapter.clear()
+                toolbar_layout.title = getString(R.string.ya_goof)
+                refresh_container.isRefreshing = false
+                comment_list_error_message.text = getString(R.string.invalid_url, state.url)
+                comment_list_view_switcher.show(comment_list_error_message)
+            }
+            is UnknownError -> {
+                adapter.clear()
+                toolbar_layout.title = getString(R.string.error)
+                refresh_container.isRefreshing = false
+                comment_list_error_message.text = getString(R.string.load_comments_failed)
+                comment_list_view_switcher.show(comment_list_error_message)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,57 +73,28 @@ class ArticleActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         supportActionBar!!.setDisplayShowHomeEnabled(true)
+        // So, if you set the title to null or empty string, it shows as To The Comments!
+        // But if you set it to a space character, it will actually stay blank
+        // This makes me sad
+        toolbar_layout.title = " "
 
         adapter = CommentPageAdapter(this::launchCommentPage)
         layoutManager = LinearLayoutManager(this)
 
-        comment_page_list.setHasFixedSize(true)
-        comment_page_list.layoutManager = layoutManager
-        comment_page_list.adapter = adapter
+        refresh_container.setOnRefreshListener(presenter::onRefreshRequested)
+        comment_list_comments.setHasFixedSize(true)
+        comment_list_comments.layoutManager = layoutManager
+        comment_list_comments.adapter = adapter
     }
 
     override fun onStart() {
         super.onStart()
-
-        val articleIdFlowable: Flowable<Long>? = when {
-            intent.sharedUrl != null -> Flowable.fromCallable { db.articles().add(Article(0, intent.sharedUrl!!)) }
-            intent.articleId != null -> Flowable.just(intent.articleId)
-            else -> null
-        }
-
-        when {
-            articleIdFlowable != null -> loadArticle(articleIdFlowable)
-            intent.isTextShare() -> {
-                Toast.makeText(this, "Unable to recognize ${intent.sharedText} as url", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-            else -> {
-                Toast.makeText(this, "I've failed you, senpai", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
+        presenter.onStart(intent.sharedText, intent.articleId)
     }
 
     override fun onStop() {
         super.onStop()
-        disposables.clear()
-    }
-
-    private fun loadArticle(articleIdFlowable: Flowable<Long>) {
-        disposables.add(
-                articleIdFlowable.flatMap {
-                    db.articles().get(it)
-                }.ui().doOnNext {
-                    toolbar_layout.title = it.url
-                    fab.setOnClickListener { view ->
-                        Snackbar.make(view, "Sharing $it.url (Not Really)", Snackbar.LENGTH_LONG).show()
-                    }
-                }.flatMap {
-                    loadComments(it).toFlowable()
-                }.ui().subscribe { comments ->
-                    adapter.commentPages = comments
-                }
-        )
+        presenter.onStop()
     }
 
     private fun launchCommentPage(page: CommentPage) {
@@ -129,17 +126,9 @@ private const val EXTRA_ARTICLE_ID = "com.burba.io.extra.article"
 private const val EXTRA_URL = "com.burba.io.extra.url"
 private const val CHROME_PACKAGE_NAME = "com.google.android.apps.chrome.Main"
 
-private fun String.isUrl() = Patterns.WEB_URL.matcher(this).matches()
 private fun Intent.isTextShare() = this.action == Intent.ACTION_SEND && this.type == "text/plain"
 private val Intent.sharedText: String?
-    get() = this.getStringExtra(Intent.EXTRA_TEXT)
-
-private val Intent.sharedUrl: String?
-    get() = if (this.isTextShare() && sharedText?.isUrl() == true) {
-        sharedText
-    } else {
-        null
-    }
+    get() = if (isTextShare()) this.getStringExtra(Intent.EXTRA_TEXT) else null
 
 private val Intent.articleId: Long?
     get() {
