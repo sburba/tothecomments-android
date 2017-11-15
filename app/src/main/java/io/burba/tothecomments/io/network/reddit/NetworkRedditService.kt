@@ -5,14 +5,14 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
 
-object Reddit {
+object NetworkRedditService {
     private val retrofit = Retrofit.Builder()
             .baseUrl("https://www.reddit.com/")
             .addConverterFactory(MoshiConverterFactory.create())
             .addCallAdapterFactory(RxJava2CallAdapterFactory.createAsync())
             .build()
 
-    private val reddit = retrofit.create(RedditHttpService::class.java)
+    private val reddit = retrofit.create(RedditApi::class.java)
 
     fun loadComments(url: String): Single<List<RedditCommentPage>> {
         return reddit.search("url:$url").map {

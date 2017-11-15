@@ -8,7 +8,7 @@ import io.burba.tothecomments.io.database.models.Article
 import io.reactivex.Flowable
 
 @Dao
-interface Articles {
+interface DbArticleService {
     @Query("SELECT * FROM articles ORDER BY last_search_time DESC")
     fun all(): Flowable<List<Article>>
 

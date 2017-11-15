@@ -105,7 +105,7 @@ class ArticleActivity : AppCompatActivity() {
         /**
          * This is a silly little hack.
          *
-         * If the user has a custom app to handle the uri (like the official Reddit app) they will
+         * If the user has a custom app to handle the uri (like the official NetworkRedditService app) they will
          * probably want to open the link in that app instead of chrome custom tabs
          *
          * So, if this url resolves to something other than chrome, we just launch it normally.

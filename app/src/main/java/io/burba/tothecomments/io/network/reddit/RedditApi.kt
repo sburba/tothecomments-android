@@ -13,7 +13,7 @@ internal data class Link(
         val subreddit: String
 )
 
-internal interface RedditHttpService {
+internal interface RedditApi {
     @GET("search.json?sort=comments&limit=5")
     fun search(@Query("q") query: String): Single<SearchResponse>
 }

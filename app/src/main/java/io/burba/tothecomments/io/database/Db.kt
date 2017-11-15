@@ -13,7 +13,7 @@ import io.burba.tothecomments.util.SingletonHolder
 @Database(entities = arrayOf(Article::class, CommentPage::class), version = 1)
 @TypeConverters(Converters::class)
 abstract class Db : RoomDatabase() {
-    abstract fun articles(): Articles
+    abstract fun articles(): DbArticleService
 
     companion object : SingletonHolder<Db, Context>({ context ->
         databaseBuilder(context.applicationContext, Db::class.java, "to_the_comments")
