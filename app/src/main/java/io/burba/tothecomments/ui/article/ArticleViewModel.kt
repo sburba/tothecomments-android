@@ -1,23 +1,24 @@
 package io.burba.tothecomments.ui.article
 
+import android.app.Application
+import android.arch.lifecycle.AndroidViewModel
 import android.util.Patterns
 import io.burba.tothecomments.io.database.Db
 import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.io.database.models.CommentPage
 import io.burba.tothecomments.io.network.loadComments
 import io.reactivex.Flowable
-import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.flowables.ConnectableFlowable
 import io.reactivex.rxkotlin.Flowables
-import io.reactivex.rxkotlin.subscribeBy
 
+class ArticleViewModel(app: Application) : AndroidViewModel(app) {
+    private val db by lazy { Db.getInstance(app) }
+    private var stateStream: ConnectableFlowable<out ArticleActivityState>? = null
+    private var disposable: Disposable? = null
 
-class ArticlePresenter(private val activity: ArticleActivity) {
-    private val db by lazy { Db.getInstance(activity.applicationContext) }
-    private val disposables = CompositeDisposable()
-    private var stateStream: Flowable<out ArticleActivityState>? = null
-
-    fun onStart(sharedText: String?, articleId: Long?) {
-        stateStream = when {
+    fun getState(sharedText: String?, articleId: Long?): Flowable<out ArticleActivityState> {
+        val state = stateStream ?: when {
             articleId != null -> {
                 loadArticle(articleId)
             }
@@ -30,25 +31,20 @@ class ArticlePresenter(private val activity: ArticleActivity) {
             else -> { // There's no article or url
                 Flowable.just(UnknownError)
             }
-        }
+        }.replay(1)
 
-        stateStream?.let {
-            disposables.add(it.subscribeBy(
-                    onNext = { activity.setState(it) },
-                    onError = { activity.setState(UnknownError) }
-            ))
-        }
+        disposable = state.connect()
+        stateStream = state
+        return state
     }
 
-    fun onStop() {
-        disposables.clear()
-    }
-
-    fun onRefreshRequested() {
-        stateStream?.subscribeBy(
-                onNext = { activity.setState(it) },
-                onError = { activity.setState(UnknownError) }
-        ) ?: activity.setState(UnknownError)
+    fun refresh(): Flowable<out ArticleActivityState> {
+        return stateStream?.let {
+            // Force the observable to reload by disposing the original connection and making a new one
+            disposable?.dispose()
+            disposable = it.connect()
+            return it
+        } ?: Flowable.just(UnknownError)
     }
 
     private fun loadArticle(url: String): Flowable<ArticleActivityState> {
@@ -71,6 +67,11 @@ class ArticlePresenter(private val activity: ArticleActivity) {
         }.map {
             Loaded(it.article, it.comments)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        disposable?.dispose()
     }
 }
 

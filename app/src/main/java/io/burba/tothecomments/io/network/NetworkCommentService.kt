@@ -1,5 +1,6 @@
 package io.burba.tothecomments.io.network
 
+import android.util.Log
 import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.io.database.models.CommentPage
 import io.burba.tothecomments.io.network.hackernews.NetworkHnService
@@ -20,5 +21,6 @@ fun loadComments(article: Article): Single<List<CommentPage>> {
         }
     }
 
+    Log.d("Network", "loadComments called")
     return Singles.zip(redditComments, hnComments, { reddit, hn -> reddit + hn })
 }

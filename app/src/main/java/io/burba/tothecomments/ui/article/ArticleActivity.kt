@@ -1,6 +1,7 @@
 package io.burba.tothecomments.ui.article
 
 import android.app.Activity
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -10,6 +11,7 @@ import android.support.v7.widget.LinearLayoutManager
 import io.burba.tothecomments.R
 import io.burba.tothecomments.io.database.models.CommentPage
 import io.burba.tothecomments.ui.show
+import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_article.*
 import kotlinx.android.synthetic.main.content_article.*
 
@@ -27,11 +29,53 @@ fun Activity.showComments(url: String) {
 
 class ArticleActivity : AppCompatActivity() {
 
-    private val presenter = ArticlePresenter(this)
+    private val disposables = CompositeDisposable()
+    private lateinit var model: ArticleViewModel
     private lateinit var adapter: CommentPageAdapter
     private lateinit var layoutManager: LinearLayoutManager
 
-    fun setState(state: ArticleActivityState) {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_article)
+
+        setSupportActionBar(toolbar)
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        supportActionBar!!.setDisplayShowHomeEnabled(true)
+        // So, if you set the title to null or empty string, it shows as To The Comments!
+        // But if you set it to a space character, it will actually stay blank
+        // This makes me sad
+        toolbar_layout.title = " "
+
+        adapter = CommentPageAdapter(this::launchCommentPage)
+        layoutManager = LinearLayoutManager(this)
+
+        comment_list_comments.setHasFixedSize(true)
+        comment_list_comments.layoutManager = layoutManager
+        comment_list_comments.adapter = adapter
+
+        model = ViewModelProviders.of(this).get(ArticleViewModel::class.java)
+
+        refresh_container.setOnRefreshListener {
+            disposables.clear()
+            disposables.add(model.refresh().subscribe(this::setState))
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        disposables.add(
+                model.getState(intent.sharedText, intent.articleId)
+                        .subscribe(this::setState)
+        )
+    }
+
+    override fun onStop() {
+        super.onStop()
+        disposables.clear()
+    }
+
+    private fun setState(state: ArticleActivityState) {
         when (state) {
             is Loading -> {
                 toolbar_layout.title = state.url
@@ -64,37 +108,6 @@ class ArticleActivity : AppCompatActivity() {
                 comment_list_view_switcher.show(comment_list_error_message)
             }
         }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_article)
-
-        setSupportActionBar(toolbar)
-        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
-        supportActionBar!!.setDisplayShowHomeEnabled(true)
-        // So, if you set the title to null or empty string, it shows as To The Comments!
-        // But if you set it to a space character, it will actually stay blank
-        // This makes me sad
-        toolbar_layout.title = " "
-
-        adapter = CommentPageAdapter(this::launchCommentPage)
-        layoutManager = LinearLayoutManager(this)
-
-        refresh_container.setOnRefreshListener(presenter::onRefreshRequested)
-        comment_list_comments.setHasFixedSize(true)
-        comment_list_comments.layoutManager = layoutManager
-        comment_list_comments.adapter = adapter
-    }
-
-    override fun onStart() {
-        super.onStart()
-        presenter.onStart(intent.sharedText, intent.articleId)
-    }
-
-    override fun onStop() {
-        super.onStop()
-        presenter.onStop()
     }
 
     private fun launchCommentPage(page: CommentPage) {
