@@ -59,7 +59,7 @@ class ArticleViewModel(app: Application) : AndroidViewModel(app) {
 private fun String.isUrl() = Patterns.WEB_URL.matcher(this).matches()
 
 private fun loadingUntil(loadedTrigger: Single<*>): Flowable<LoadingState> =
-        Single.concat(Single.just(LoadingState.LOADED), loadedTrigger.map { LoadingState.LOADED })
+        Single.concat(Single.just(LoadingState.LOADING), loadedTrigger.map { LoadingState.LOADED })
 
 private fun toLoadedState(articlePage: ArticlePage) =
         if (articlePage.comments.isEmpty())
