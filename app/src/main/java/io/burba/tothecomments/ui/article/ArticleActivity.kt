@@ -87,12 +87,12 @@ class ArticleActivity : AppCompatActivity() {
     private fun setContentState(contentState: ContentState) {
         when (contentState) {
             is ShowingContent -> {
-                toolbar_layout.title = contentState.article.url
+                toolbar_layout.title = contentState.article.title
                 adapter.commentPages = contentState.comments
                 comment_list_view_switcher.show(comment_list_comments)
             }
             is NoCommentsFoundError -> {
-                toolbar_layout.title = contentState.article.url
+                toolbar_layout.title = contentState.article.title
                 adapter.commentPages = arrayListOf()
                 comment_list_error_message.text = getString(R.string.no_comments_found)
                 comment_list_view_switcher.show(comment_list_error_message)

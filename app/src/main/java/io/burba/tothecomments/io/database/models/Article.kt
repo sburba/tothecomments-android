@@ -19,6 +19,8 @@ data class Article(
         @PrimaryKey(autoGenerate = true)
         val id: Long,
         val url: String,
+        val title: String,
+        val imageUrl: String? = null,
         @ColumnInfo(name = "last_search_time")
         val lastSearchTime: Instant = Instant.now(),
         @ColumnInfo(name = "last_comment_fetch_time")

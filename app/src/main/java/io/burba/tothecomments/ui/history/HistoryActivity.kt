@@ -4,19 +4,18 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import io.burba.tothecomments.R
-import io.burba.tothecomments.io.database.Db
-import io.burba.tothecomments.io.database.models.Article
+import io.burba.tothecomments.io.ArticleService
 import io.burba.tothecomments.ui.article.showComments
 import io.burba.tothecomments.ui.ui
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.activity_history.*
 import kotlinx.android.synthetic.main.content_history.*
 
 val urls = arrayOf("https://github.com/square/moshi/", "https://github.com/square/retrofit", "http://example.com")
 
 class HistoryActivity : AppCompatActivity() {
-    private val db by lazy { Db.getInstance(this) }
+    private val articleService by lazy { ArticleService.getInstance(this) }
     private val disposables = CompositeDisposable()
     private lateinit var adapter: ArticleAdapter
     private lateinit var layoutManager: LinearLayoutManager
@@ -37,7 +36,7 @@ class HistoryActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        disposables.add(db.articles().all()
+        disposables.add(articleService.articles()
                 .ui()
                 .subscribe {
                     adapter.articles = it
@@ -47,10 +46,8 @@ class HistoryActivity : AppCompatActivity() {
         )
 
         fab.setOnClickListener {
-            disposables.add(Single.fromCallable { db.articles().add(Article(0, urls[(Math.random() * urls.size).toInt()])) }
-                    .ui()
-                    .subscribe()
-            )
+            val url = urls[(Math.random() * urls.size).toInt()]
+            disposables += articleService.articlePage(url).ui().subscribe()
         }
     }
 

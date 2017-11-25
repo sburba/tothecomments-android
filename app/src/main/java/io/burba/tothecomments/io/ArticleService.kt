@@ -3,6 +3,7 @@ package io.burba.tothecomments.io
 import android.content.Context
 import io.burba.tothecomments.io.database.Db
 import io.burba.tothecomments.io.database.models.Article
+import io.burba.tothecomments.io.network.loadArticle as loadNetworkArticle
 import io.burba.tothecomments.util.SingletonHolder
 import io.reactivex.Flowable
 import io.reactivex.rxkotlin.Flowables
@@ -17,9 +18,8 @@ class ArticleService(context: Context) {
     fun articlePage(article: Article): Flowable<ArticlePage> = Flowable.just(article).articlePage()
 
     fun articlePage(url: String): Flowable<ArticlePage> {
-        return Flowable.fromCallable {
-            dbArticles.add(Article(0, url))
-        }.flatMap { articleId ->
+        return loadNetworkArticle(url).toFlowable().flatMap {
+            val articleId = dbArticles.add(it)
             dbArticles.get(articleId)
         }.articlePage()
     }
