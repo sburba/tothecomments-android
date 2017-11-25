@@ -22,13 +22,14 @@ class ArticleViewModel(app: Application) : AndroidViewModel(app) {
             article != null -> {
                 articleService.articlePage(article).map(::toLoadedState)
             }
-            sharedText != null && sharedText.isUrl() -> { // They've shared a valid url
-                articleService.articlePage(sharedText).map(::toLoadedState)
+            sharedText != null -> {
+                if (sharedText.isUrl()) {
+                    articleService.articlePage(sharedText).map(::toLoadedState)
+                } else {
+                    Flowable.just(InvalidUrlError(sharedText))
+                }
             }
-            sharedText != null && !sharedText.isUrl() -> { // They've shared an invalid url
-                Flowable.just(InvalidUrlError(sharedText))
-            }
-            else -> { // There's no article or url
+            else -> {
                 Flowable.just(UnknownError)
             }
         }.ui().replay(1)
