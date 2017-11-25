@@ -3,9 +3,11 @@ package io.burba.tothecomments.ui.article
 import android.app.Activity
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.support.customtabs.CustomTabsIntent
+import android.support.customtabs.CustomTabsService
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import io.burba.tothecomments.R
@@ -109,31 +111,34 @@ class ArticleActivity : AppCompatActivity() {
     private fun launchCommentPage(page: CommentPage) {
         val uri = Uri.parse(page.url)
         val intent = Intent(Intent.ACTION_VIEW, uri)
-        val activity = intent.resolveActivity(packageManager)
 
-        /**
-         * This is a silly little hack.
-         *
-         * If the user has a custom app to handle the uri (like the official reddit app) they will
-         * probably want to open the link in that app instead of chrome custom tabs
-         *
-         * So, if this url resolves to something other than chrome, we just launch it normally.
-         *
-         * Now, you're saying, what if they just have a different default browser? Well, as it turns
-         * out, if chrome detects that another browser is default it won't use custom tabs and it
-         * will launch their preferred browser anyways. So this hack should have the same result
-         */
-        if (activity.className != CHROME_PACKAGE_NAME) {
-            startActivity(intent)
-        } else {
+        if (intent.shouldUseCustomTabs(packageManager)) {
             CustomTabsIntent.Builder().build().launchUrl(this, uri)
+        } else {
+            startActivity(intent)
         }
     }
 }
 
 private const val EXTRA_ARTICLE = "com.burba.io.extra.article"
 private const val EXTRA_URL = "com.burba.io.extra.url"
-private const val CHROME_PACKAGE_NAME = "com.google.android.apps.chrome.Main"
+
+/**
+ * Returns true of the current intent resolves to a package that supports custom tabs
+ *
+ * This allows you to use custom tabs if for example Chrome is the default opener for the intent,
+ * but skip them if they have a custom app set up for it that doesn't support custom tabs (Like the
+ * official reddit app)
+ */
+private fun Intent.shouldUseCustomTabs(packageManager: PackageManager): Boolean {
+    val activity = this.resolveActivity(packageManager)
+
+    val customTabsService = Intent().apply {
+        action = CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION
+        `package` = activity.packageName
+    }
+    return packageManager.resolveService(customTabsService, 0) != null
+}
 
 private fun Intent.isTextShare() = this.action == Intent.ACTION_SEND && this.type == "text/plain"
 private val Intent.sharedText: String?
