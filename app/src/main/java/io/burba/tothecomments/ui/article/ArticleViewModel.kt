@@ -60,5 +60,8 @@ private fun String.isUrl() = Patterns.WEB_URL.matcher(this).matches()
 private fun loadingUntil(loadedTrigger: Single<*>): Flowable<LoadingState> =
         Single.concat(Single.just(LoadingState.LOADED), loadedTrigger.map { LoadingState.LOADED })
 
-private fun toLoadedState(articlePage: ArticlePage) = ShowingContent(articlePage.article, articlePage.comments)
-
+private fun toLoadedState(articlePage: ArticlePage) =
+        if (articlePage.comments.isEmpty())
+            NoCommentsFoundError(articlePage.article)
+        else
+            ShowingContent(articlePage.article, articlePage.comments)

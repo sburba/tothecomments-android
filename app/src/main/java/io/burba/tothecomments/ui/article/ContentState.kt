@@ -13,5 +13,6 @@ enum class LoadingState {
 sealed class ContentState
 
 data class ShowingContent(val article: Article, val comments: List<CommentPage>) : ContentState()
+data class NoCommentsFoundError(val article: Article) : ContentState()
 object UnknownError : ContentState()
 data class InvalidUrlError(val url: String) : ContentState()
