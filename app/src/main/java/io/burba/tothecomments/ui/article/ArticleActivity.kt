@@ -9,15 +9,17 @@ import android.support.customtabs.CustomTabsIntent
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import io.burba.tothecomments.R
+import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.io.database.models.CommentPage
 import io.burba.tothecomments.ui.show
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.activity_article.*
 import kotlinx.android.synthetic.main.content_article.*
 
-fun Activity.showComments(articleId: Long) {
+fun Activity.showComments(article: Article) {
     val intent = Intent(this, ArticleActivity::class.java)
-    intent.putExtra(EXTRA_ARTICLE_ID, articleId)
+    intent.putExtra(EXTRA_ARTICLE, article)
     startActivity(intent)
 }
 
@@ -57,17 +59,15 @@ class ArticleActivity : AppCompatActivity() {
         model = ViewModelProviders.of(this).get(ArticleViewModel::class.java)
 
         refresh_container.setOnRefreshListener {
-            disposables.clear()
-            disposables.add(model.refresh().subscribe(this::setState))
+            disposables += model.refresh().subscribe(this::setLoadingState)
         }
     }
 
     override fun onStart() {
         super.onStart()
-        disposables.add(
-                model.getState(intent.sharedText, intent.articleId)
-                        .subscribe(this::setState)
-        )
+        val state = model.getState(intent.sharedText, intent.article)
+        disposables += state.contentStream.subscribe(this::setContentState)
+        disposables += state.loading.subscribe(this::setLoadingState)
     }
 
     override fun onStop() {
@@ -75,36 +75,25 @@ class ArticleActivity : AppCompatActivity() {
         disposables.clear()
     }
 
-    private fun setState(state: ArticleActivityState) {
-        when (state) {
-            is Loading -> {
-                toolbar_layout.title = state.url
-                refresh_container.isRefreshing = true
+    private fun setLoadingState(loadingState: LoadingState) {
+        when (loadingState) {
+            LoadingState.LOADING -> refresh_container.isRefreshing = true
+            LoadingState.LOADED -> refresh_container.isRefreshing = false
+        }
+    }
+
+    private fun setContentState(contentState: ContentState) {
+        when (contentState) {
+            is ShowingContent -> {
+                toolbar_layout.title = contentState.article.url
+                adapter.commentPages = contentState.comments
                 comment_list_view_switcher.show(comment_list_comments)
-            }
-            is LoadingWithArticle -> {
-                toolbar_layout.title = state.article.url
-                refresh_container.isRefreshing = true
-                comment_list_view_switcher.show(comment_list_comments)
-            }
-            is Loaded -> {
-                toolbar_layout.title = state.article.url
-                refresh_container.isRefreshing = false
-                adapter.commentPages = state.commentPages
-                comment_list_view_switcher.show(comment_list_comments)
-            }
-            is NoCommentsFoundError -> {
-                adapter.clear()
-                toolbar_layout.title = state.article.url
-                refresh_container.isRefreshing = false
-                comment_list_error_message.text = getString(R.string.no_comments_found)
-                comment_list_view_switcher.show(comment_list_error_message)
             }
             is InvalidUrlError -> {
                 adapter.clear()
                 toolbar_layout.title = getString(R.string.ya_goof)
                 refresh_container.isRefreshing = false
-                comment_list_error_message.text = getString(R.string.invalid_url, state.url)
+                comment_list_error_message.text = getString(R.string.invalid_url, contentState.url)
                 comment_list_view_switcher.show(comment_list_error_message)
             }
             is UnknownError -> {
@@ -142,7 +131,7 @@ class ArticleActivity : AppCompatActivity() {
     }
 }
 
-private const val EXTRA_ARTICLE_ID = "com.burba.io.extra.article"
+private const val EXTRA_ARTICLE = "com.burba.io.extra.article"
 private const val EXTRA_URL = "com.burba.io.extra.url"
 private const val CHROME_PACKAGE_NAME = "com.google.android.apps.chrome.Main"
 
@@ -150,8 +139,5 @@ private fun Intent.isTextShare() = this.action == Intent.ACTION_SEND && this.typ
 private val Intent.sharedText: String?
     get() = if (isTextShare()) this.getStringExtra(Intent.EXTRA_TEXT) else null
 
-private val Intent.articleId: Long?
-    get() {
-        val id = this.getLongExtra(EXTRA_ARTICLE_ID, -1)
-        return if (id != -1L) id else null
-    }
+private val Intent.article: Article?
+    get() = this.getParcelableExtra(EXTRA_ARTICLE)

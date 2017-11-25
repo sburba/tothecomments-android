@@ -3,7 +3,10 @@ package io.burba.tothecomments.io.database.models
 import android.arch.persistence.room.*
 
 @Entity(tableName = "comment_pages",
-        indices = arrayOf(Index("article_id")),
+        indices = arrayOf(
+                Index("article_id"),
+                Index("url", unique = true)
+        ),
         foreignKeys = arrayOf(ForeignKey(
                 entity = Article::class,
                 parentColumns = arrayOf("id"),

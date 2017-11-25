@@ -26,7 +26,7 @@ class HistoryActivity : AppCompatActivity() {
         setContentView(R.layout.activity_history)
         setSupportActionBar(toolbar)
 
-        adapter = ArticleAdapter { showComments(it.id) }
+        adapter = ArticleAdapter(onItemClick = { showComments(it) })
         layoutManager = LinearLayoutManager(this)
 
         article_list.setHasFixedSize(true)

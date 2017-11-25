@@ -3,28 +3,27 @@ package io.burba.tothecomments.ui.article
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
 import android.util.Patterns
-import io.burba.tothecomments.io.database.Db
+import io.burba.tothecomments.io.ArticlePage
+import io.burba.tothecomments.io.ArticleService
 import io.burba.tothecomments.io.database.models.Article
-import io.burba.tothecomments.io.database.models.CommentPage
-import io.burba.tothecomments.io.network.loadComments
 import io.burba.tothecomments.ui.ui
 import io.reactivex.Flowable
+import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import io.reactivex.flowables.ConnectableFlowable
-import io.reactivex.rxkotlin.Flowables
 
 class ArticleViewModel(app: Application) : AndroidViewModel(app) {
-    private val db by lazy { Db.getInstance(app) }
-    private var stateStream: ConnectableFlowable<out ArticleActivityState>? = null
+    private val articleService by lazy { ArticleService.getInstance(app) }
+    private var contentStateStream: ConnectableFlowable<out ContentState>? = null
     private var disposable: Disposable? = null
 
-    fun getState(sharedText: String?, articleId: Long?): Flowable<out ArticleActivityState> {
-        val state = stateStream ?: when {
-            articleId != null -> {
-                loadArticle(articleId)
+    fun getState(sharedText: String?, article: Article?): ArticleActivityState {
+        val state = contentStateStream ?: when {
+            article != null -> {
+                articleService.articlePage(article).map(::toLoadedState)
             }
             sharedText != null && sharedText.isUrl() -> { // They've shared a valid url
-                loadArticle(sharedText)
+                articleService.articlePage(sharedText).map(::toLoadedState)
             }
             sharedText != null && !sharedText.isUrl() -> { // They've shared an invalid url
                 Flowable.just(InvalidUrlError(sharedText))
@@ -35,39 +34,19 @@ class ArticleViewModel(app: Application) : AndroidViewModel(app) {
         }.ui().replay(1)
 
         disposable = state.connect()
-        stateStream = state
-        return state
+        contentStateStream = state
+        return ArticleActivityState(state, loadingUntil(state.firstOrError()))
     }
 
-    fun refresh(): Flowable<out ArticleActivityState> {
-        return stateStream?.let {
-            // Force the observable to reload by disposing the original connection and making a new one
-            disposable?.dispose()
-            disposable = it.connect()
-            return it
-        } ?: Flowable.just(UnknownError)
-    }
-
-    private fun loadArticle(url: String): Flowable<ArticleActivityState> {
-        return loadArticle(Flowable.fromCallable {
-            db.articles().add(Article(0, url))
-        })
-    }
-
-    private fun loadArticle(id: Long): Flowable<ArticleActivityState> {
-        return loadArticle(Flowable.just(id))
-    }
-
-    private fun loadArticle(articleIdFlowable: Flowable<Long>): Flowable<ArticleActivityState> {
-        return articleIdFlowable.flatMap {
-            db.articles().get(it)
-        }.distinct {
-            it.url
-        }.flatMap { article ->
-            Flowables.zip(Flowable.just(article), loadComments(article).toFlowable(), ::ArticleWithComments)
-        }.map {
-            if (it.comments.isEmpty()) NoCommentsFoundError(it.article) else Loaded(it.article, it.comments)
-        }
+    fun refresh(): Flowable<LoadingState> {
+        return contentStateStream?.let {
+            it.firstOrError().toFlowable().flatMap { state ->
+                when (state) {
+                    is ShowingContent -> loadingUntil(articleService.refreshComments(state.article))
+                    else -> Flowable.just(LoadingState.LOADED)
+                }
+            }
+        } ?: Flowable.just(LoadingState.LOADED)
     }
 
     override fun onCleared() {
@@ -76,6 +55,10 @@ class ArticleViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-private data class ArticleWithComments(val article: Article, val comments: List<CommentPage>)
-
 private fun String.isUrl() = Patterns.WEB_URL.matcher(this).matches()
+
+private fun loadingUntil(loadedTrigger: Single<*>): Flowable<LoadingState> =
+        Single.concat(Single.just(LoadingState.LOADED), loadedTrigger.map { LoadingState.LOADED })
+
+private fun toLoadedState(articlePage: ArticlePage) = ShowingContent(articlePage.article, articlePage.comments)
+

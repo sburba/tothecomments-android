@@ -1,11 +1,10 @@
 package io.burba.tothecomments.io.database
 
-import android.arch.persistence.room.Dao
-import android.arch.persistence.room.Insert
-import android.arch.persistence.room.OnConflictStrategy
-import android.arch.persistence.room.Query
+import android.arch.persistence.room.*
 import io.burba.tothecomments.io.database.models.Article
+import io.burba.tothecomments.io.database.models.CommentPage
 import io.reactivex.Flowable
+import org.threeten.bp.Instant
 
 @Dao
 interface DbArticleService {
@@ -17,4 +16,13 @@ interface DbArticleService {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun add(link: Article): Long
+
+    @Query("SELECT * FROM comment_pages WHERE article_id = :articleId")
+    fun getComments(articleId: Long): Flowable<List<CommentPage>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun addAll(commentPages: List<CommentPage>)
+
+    @Query("UPDATE articles SET last_comment_fetch_time = :atInstant WHERE id=:articleId")
+    fun recordCommentsFetched(articleId: Long, atInstant: Instant)
 }
