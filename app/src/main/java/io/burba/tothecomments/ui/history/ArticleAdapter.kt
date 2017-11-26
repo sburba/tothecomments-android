@@ -11,9 +11,12 @@ import com.squareup.picasso.Picasso
 import io.burba.tothecomments.R
 import io.burba.tothecomments.io.database.models.Article
 
+private const val IMAGE_ARTICLE = 1
+private const val TEXT_ARTICLE = 2
+
 class ArticleAdapter(
         articles: List<Article> = arrayListOf(),
-        private val onItemClick: (Article, ImageView) -> (Unit)
+        private val onItemClick: (Article, ImageView?) -> (Unit)
 ) : RecyclerView.Adapter<ArticleAdapter.ViewHolder>() {
 
     var articles: List<Article> = articles
@@ -25,9 +28,18 @@ class ArticleAdapter(
 
     override fun getItemCount() = articles.size
 
+    override fun getItemViewType(position: Int) = when {
+        articles[position].imageUrl != null -> IMAGE_ARTICLE
+        else -> TEXT_ARTICLE
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.image_article_card, parent, false)
+        val inflater = LayoutInflater.from(parent.context)
+        val view = when (viewType) {
+            IMAGE_ARTICLE -> inflater.inflate(R.layout.item_image_article, parent, false)
+            TEXT_ARTICLE -> inflater.inflate(R.layout.item_text_article, parent, false)
+            else -> throw IllegalArgumentException("Unexpected view type: $viewType")
+        }
 
         return ViewHolder(view)
     }
@@ -36,38 +48,36 @@ class ArticleAdapter(
         val article = articles[position]
 
         holder.title.text = article.title
-        Picasso.with(holder.image.context).cancelRequest(holder.image)
-        if (article.imageUrl != null) {
+        if (holder.image != null) {
             Picasso.with(holder.image.context).load(article.imageUrl).into(holder.image)
-        } else {
-            holder.image.setImageResource(R.drawable.ic_launcher_background)
         }
     }
 
-    private fun handleItemClick(pos: Int, v: ImageView) {
+    private fun handleItemClick(pos: Int, v: ImageView?) {
         onItemClick(articles[pos], v)
     }
 
     inner class ViewHolder(root: View) : RecyclerView.ViewHolder(root), View.OnClickListener {
         val title = root.findViewById<TextView>(R.id.article_title)!!
-        val image = root.findViewById<ImageView>(R.id.article_image)!!
-
-        override fun onClick(v: View) {
-            handleItemClick(adapterPosition, image)
-        }
+        val image: ImageView? = root.findViewById(R.id.article_image)
 
         init {
             root.setOnClickListener(this)
         }
-    }
 
-    private class DiffCallback(private val old: List<Article>, private val new: List<Article>) : DiffUtil.Callback() {
-        override fun getOldListSize() = old.size
-        override fun getNewListSize() = new.size
-
-        override fun areItemsTheSame(oldPos: Int, newPos: Int) = old[oldPos].url == new[newPos].url
-        override fun areContentsTheSame(oldPos: Int, newPos: Int) =
-                old[oldPos].title == new[newPos].title &&
-                        old[oldPos].imageUrl == new[newPos].imageUrl
+        override fun onClick(view: View) {
+            handleItemClick(adapterPosition, image)
+        }
     }
+}
+
+
+private class DiffCallback(private val old: List<Article>, private val new: List<Article>) : DiffUtil.Callback() {
+    override fun getOldListSize() = old.size
+    override fun getNewListSize() = new.size
+
+    override fun areItemsTheSame(oldPos: Int, newPos: Int) = old[oldPos].url == new[newPos].url
+    override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+            old[oldPos].title == new[newPos].title &&
+                    old[oldPos].imageUrl == new[newPos].imageUrl
 }

@@ -24,11 +24,15 @@ import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.activity_article.*
 import kotlinx.android.synthetic.main.content_article.*
 
-fun Activity.showComments(article: Article, articleImage: ImageView) {
+fun Activity.showComments(article: Article, articleImage: ImageView?) {
     val intent = Intent(this, ArticleActivity::class.java)
     intent.putExtra(EXTRA_ARTICLE, article)
-    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, articleImage, "article_image")
-    startActivity(intent, options.toBundle())
+    if (articleImage != null) {
+        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, articleImage, "article_image")
+        startActivity(intent, options.toBundle())
+    } else {
+        startActivity(intent)
+    }
 }
 
 fun Activity.showComments(url: String) {

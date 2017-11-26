@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
+    android:foreground="?android:attr/selectableItemBackground"
     app:cardCornerRadius="2dp"
     tools:context=".ui.history.HistoryActivity">
 
@@ -13,7 +14,6 @@
         android:id="@+id/card_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?android:attr/selectableItemBackground"
         android:orientation="vertical">
 
         <ImageView
