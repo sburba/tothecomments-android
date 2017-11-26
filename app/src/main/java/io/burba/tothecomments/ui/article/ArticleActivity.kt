@@ -8,21 +8,28 @@ import android.net.Uri
 import android.os.Bundle
 import android.support.customtabs.CustomTabsIntent
 import android.support.customtabs.CustomTabsService
+import android.support.v4.app.ActivityOptionsCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
+import android.view.MenuItem
+import android.view.View
+import android.widget.ImageView
+import com.squareup.picasso.Picasso
 import io.burba.tothecomments.R
 import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.io.database.models.CommentPage
+import io.burba.tothecomments.ui.afterSharedElementTransition
 import io.burba.tothecomments.ui.show
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.android.synthetic.main.activity_article.*
 import kotlinx.android.synthetic.main.content_article.*
 
-fun Activity.showComments(article: Article) {
+fun Activity.showComments(article: Article, articleImage: ImageView) {
     val intent = Intent(this, ArticleActivity::class.java)
     intent.putExtra(EXTRA_ARTICLE, article)
-    startActivity(intent)
+    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, articleImage, "article_image")
+    startActivity(intent, options.toBundle())
 }
 
 fun Activity.showComments(url: String) {
@@ -46,10 +53,16 @@ class ArticleActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         supportActionBar!!.setDisplayShowHomeEnabled(true)
-        // So, if you set the title to null or empty string, it shows as To The Comments!
-        // But if you set it to a space character, it will actually stay blank
-        // This makes me sad
-        toolbar_layout.title = " "
+
+        // Hide the title and fab until after the shared element transition because they look funny
+        // when the image is animating over them
+        toolbar_layout.isTitleEnabled = false
+        fab.visibility = View.GONE
+
+        disposables += afterSharedElementTransition {
+            toolbar_layout.isTitleEnabled = true
+            fab.visibility = View.VISIBLE
+        }
 
         adapter = CommentPageAdapter(this::launchCommentPage)
         layoutManager = LinearLayoutManager(this)
@@ -74,7 +87,30 @@ class ArticleActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
+        Picasso.with(this).cancelRequest(article_image)
         disposables.clear()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == android.R.id.home) {
+            cleanupAndFinish()
+            return true
+        }
+
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onBackPressed() {
+        cleanupAndFinish()
+    }
+
+    private fun cleanupAndFinish() {
+        Picasso.with(this).cancelRequest(article_image)
+        // The fab and toolbar text freak out in activity transitions, so hide them
+        fab.visibility = View.GONE
+        toolbar_layout.isTitleEnabled = false
+
+        supportFinishAfterTransition()
     }
 
     private fun setLoadingState(loadingState: LoadingState) {
@@ -84,15 +120,16 @@ class ArticleActivity : AppCompatActivity() {
         }
     }
 
-    private fun setContentState(contentState: ContentState) {
-        when (contentState) {
+    private fun setContentState(state: ContentState) {
+        when (state) {
             is ShowingContent -> {
-                toolbar_layout.title = contentState.article.title
-                adapter.commentPages = contentState.comments
+                Picasso.with(this).load(state.article.imageUrl).into(article_image)
+                toolbar_layout.title = state.article.title
+                adapter.commentPages = state.comments
                 comment_list_view_switcher.show(comment_list_comments)
             }
             is NoCommentsFoundError -> {
-                toolbar_layout.title = contentState.article.title
+                toolbar_layout.title = state.article.title
                 adapter.commentPages = arrayListOf()
                 comment_list_error_message.text = getString(R.string.no_comments_found)
                 comment_list_view_switcher.show(comment_list_error_message)
@@ -101,7 +138,7 @@ class ArticleActivity : AppCompatActivity() {
                 adapter.clear()
                 toolbar_layout.title = getString(R.string.ya_goof)
                 refresh_container.isRefreshing = false
-                comment_list_error_message.text = getString(R.string.invalid_url, contentState.url)
+                comment_list_error_message.text = getString(R.string.invalid_url, state.url)
                 comment_list_view_switcher.show(comment_list_error_message)
             }
             is UnknownError -> {

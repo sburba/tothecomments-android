@@ -25,7 +25,7 @@ class HistoryActivity : AppCompatActivity() {
         setContentView(R.layout.activity_history)
         setSupportActionBar(toolbar)
 
-        adapter = ArticleAdapter(onItemClick = { showComments(it) })
+        adapter = ArticleAdapter(onItemClick = { article, imageView -> showComments(article, imageView) })
         layoutManager = LinearLayoutManager(this)
 
         article_list.setHasFixedSize(true)
@@ -40,8 +40,6 @@ class HistoryActivity : AppCompatActivity() {
                 .ui()
                 .subscribe {
                     adapter.articles = it
-                    // We just added an article on the top, show it
-                    layoutManager.scrollToPosition(0)
                 }
         )
 

@@ -5,12 +5,15 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
+import com.squareup.picasso.Picasso
+import io.burba.tothecomments.R
 import io.burba.tothecomments.io.database.models.Article
 
 class ArticleAdapter(
         articles: List<Article> = arrayListOf(),
-        private val onItemClick: (Article) -> (Unit) = {}
+        private val onItemClick: (Article, ImageView) -> (Unit)
 ) : RecyclerView.Adapter<ArticleAdapter.ViewHolder>() {
 
     var articles: List<Article> = articles
@@ -24,7 +27,7 @@ class ArticleAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-                .inflate(android.R.layout.simple_list_item_1, parent, false) as TextView
+                .inflate(R.layout.image_article_card, parent, false)
 
         return ViewHolder(view)
     }
@@ -32,20 +35,29 @@ class ArticleAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val article = articles[position]
 
-        holder.textView.text = article.url
+        holder.title.text = article.title
+        Picasso.with(holder.image.context).cancelRequest(holder.image)
+        if (article.imageUrl != null) {
+            Picasso.with(holder.image.context).load(article.imageUrl).into(holder.image)
+        } else {
+            holder.image.setImageResource(R.drawable.ic_launcher_background)
+        }
     }
 
-    private fun onItemClick(pos: Int) {
-        onItemClick(articles[pos])
+    private fun handleItemClick(pos: Int, v: ImageView) {
+        onItemClick(articles[pos], v)
     }
 
-    inner class ViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView), View.OnClickListener {
+    inner class ViewHolder(root: View) : RecyclerView.ViewHolder(root), View.OnClickListener {
+        val title = root.findViewById<TextView>(R.id.article_title)!!
+        val image = root.findViewById<ImageView>(R.id.article_image)!!
+
         override fun onClick(v: View) {
-            onItemClick(adapterPosition)
+            handleItemClick(adapterPosition, image)
         }
 
         init {
-            textView.setOnClickListener(this)
+            root.setOnClickListener(this)
         }
     }
 
@@ -54,6 +66,8 @@ class ArticleAdapter(
         override fun getNewListSize() = new.size
 
         override fun areItemsTheSame(oldPos: Int, newPos: Int) = old[oldPos].url == new[newPos].url
-        override fun areContentsTheSame(oldPos: Int, newPos: Int) = old[oldPos] == new[newPos]
+        override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+                old[oldPos].title == new[newPos].title &&
+                        old[oldPos].imageUrl == new[newPos].imageUrl
     }
 }
