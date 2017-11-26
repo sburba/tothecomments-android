@@ -43,6 +43,7 @@ class ArticleActivity : AppCompatActivity() {
     private lateinit var model: ArticleViewModel
     private lateinit var adapter: CommentPageAdapter
     private lateinit var layoutManager: LinearLayoutManager
+    private var appBarOffset = 0
 
 
     override fun onEnterAnimationComplete() {
@@ -67,6 +68,10 @@ class ArticleActivity : AppCompatActivity() {
 
         adapter = CommentPageAdapter(this::launchCommentPage)
         layoutManager = LinearLayoutManager(this)
+
+        app_bar.addOnOffsetChangedListener { _, verticalOffset ->
+            appBarOffset = verticalOffset
+        }
 
         comment_list_comments.setHasFixedSize(true)
         comment_list_comments.layoutManager = layoutManager
@@ -110,6 +115,12 @@ class ArticleActivity : AppCompatActivity() {
         // The fab and toolbar text freak out in activity transitions, so hide them
         fab.visibility = View.GONE
         toolbar_layout.isTitleEnabled = false
+
+        // If the image is hidden (because you scrolled down), don't do the image transition for
+        // obvious reasons
+        if (appBarOffset < 0) {
+            article_image.transitionName = null
+        }
 
         supportFinishAfterTransition()
     }
