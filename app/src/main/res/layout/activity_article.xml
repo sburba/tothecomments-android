@@ -33,10 +33,15 @@
                 android:transitionName="article_image"
                 app:layout_collapseMode="parallax" />
 
+            <!-- The title defaults to the name of the app if the title is null or empty for some
+                 reason, and when you disable the title in the CollapsingToolbarLayout the toolbar
+                 one will show up. So we set it to a visually empty string to prevent it from
+                 showing up-->
             <android.support.v7.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
+                app:title=" "
                 app:layout_collapseMode="pin"
                 app:popupTheme="@style/AppTheme.PopupOverlay" />
 
