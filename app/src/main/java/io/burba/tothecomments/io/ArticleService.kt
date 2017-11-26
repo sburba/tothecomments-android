@@ -5,6 +5,7 @@ import io.burba.tothecomments.io.database.Db
 import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.util.SingletonHolder
 import io.reactivex.Flowable
+import io.reactivex.Single
 import io.reactivex.rxkotlin.Flowables
 import org.threeten.bp.Instant
 import io.burba.tothecomments.io.network.loadArticle as loadNetworkArticle
@@ -19,10 +20,19 @@ class ArticleService(context: Context) {
             .flatMap { toArticlePage(it) }
 
     fun articlePage(url: String): Flowable<ArticlePage> {
-        return loadNetworkArticle(url).toFlowable().flatMap {
+        val networkArticleSource = loadNetworkArticle(url).flatMap {
             val articleId = dbArticles.add(it)
-            dbArticles.get(articleId)
-        }.flatMap { toArticlePage(it) }
+            Single.just(articleId)
+        }
+        val dbArticleSource = dbArticles.get(url).map { dbArticles.recordSearchedFor(it.id) }
+
+        return dbArticleSource.switchIfEmpty(
+                networkArticleSource
+        ).toFlowable().flatMap {
+            dbArticles.get(it)
+        }.flatMap {
+            toArticlePage(it)
+        }
     }
 
     fun refreshComments(article: Article) = loadNetworkComments(article).map {
