@@ -18,7 +18,6 @@ import com.squareup.picasso.Picasso
 import io.burba.tothecomments.R
 import io.burba.tothecomments.io.database.models.Article
 import io.burba.tothecomments.io.database.models.CommentPage
-import io.burba.tothecomments.ui.afterSharedElementTransition
 import io.burba.tothecomments.ui.show
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -46,6 +45,13 @@ class ArticleActivity : AppCompatActivity() {
     private lateinit var layoutManager: LinearLayoutManager
 
 
+    override fun onEnterAnimationComplete() {
+        super.onEnterAnimationComplete()
+
+        toolbar_layout.isTitleEnabled = true
+        fab.visibility = View.VISIBLE
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_article)
@@ -58,11 +64,6 @@ class ArticleActivity : AppCompatActivity() {
         // when the image is animating over them
         toolbar_layout.isTitleEnabled = false
         fab.visibility = View.GONE
-
-        disposables += afterSharedElementTransition {
-            toolbar_layout.isTitleEnabled = true
-            fab.visibility = View.VISIBLE
-        }
 
         adapter = CommentPageAdapter(this::launchCommentPage)
         layoutManager = LinearLayoutManager(this)
